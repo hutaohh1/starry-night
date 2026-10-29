@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080f19">
+  <title>星月夜 · 流动的笔触</title>
+  <style>
+    :root{color-scheme:dark;--bg:#050b12;--text:#ede9d5;--muted:#8ba5a7;--gold:#e5ce83}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif}
+    body{background:radial-gradient(ellipse at 8% 0%,#16303d55,transparent 45%),radial-gradient(ellipse at 96% 92%,#3a362118,transparent 40%),var(--bg)}
+    .app{min-height:100svh;max-width:1780px;margin:auto;display:flex;flex-direction:column;padding:28px 3.4vw 20px;gap:21px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:20px}h1{font-family:"Noto Serif SC","Songti SC",SimSun,serif;font-size:28px;letter-spacing:.2em;font-weight:400;margin:0}
+    .subtitle{font-size:12px;color:var(--muted);letter-spacing:.1em;margin:8px 0 0}.signature{font:italic 19px Georgia,serif;color:#a5b8b4}.signature small{font:11px "Microsoft YaHei",sans-serif;display:block;text-align:right;margin-top:7px;color:var(--muted)}
+    header{padding:0 4px}h1{color:#ece4c6;font-size:30px;text-shadow:0 0 25px #e5ce8315}.subtitle{color:#829da2;letter-spacing:.2em;font-size:11px}.signature{color:#b3c1b6}
+    main{flex:1;min-height:200px;display:flex;justify-content:center;align-items:center;position:relative}.painting{position:relative;width:min(100%,calc((100svh - 226px)*1.6));aspect-ratio:1.6;background:#070f17;overflow:hidden;border-radius:3px;box-shadow:0 0 0 1px #bccdb51b,0 20px 90px #0009,0 0 70px #2c64721b}
+    canvas{display:block;width:100%;height:100%}.painting:fullscreen{width:100vw;height:100vh;display:flex;justify-content:center;align-items:center;background:#080f19}.painting:fullscreen canvas{width:min(100vw,160vh);height:min(100vh,62.5vw)}
+    .hint{position:absolute;bottom:18px;left:22px;font-size:11px;letter-spacing:.12em;color:#b7c9bc;pointer-events:none;opacity:.65;transition:opacity 1s}.painting:hover .hint{opacity:1}
+    .toolbar{display:flex;gap:14px 20px;align-items:center;justify-content:center;flex-wrap:wrap;min-height:52px;padding:13px 18px;background:linear-gradient(110deg,#14222bc9,#101b23cf);border:1px solid #bed3c21b;box-shadow:0 12px 40px #0004;border-radius:12px;align-self:center;max-width:100%}button{font-size:12px;font-family:inherit;color:var(--text);background:#c8d9c805;border:1px solid #819c9b38;border-radius:6px;padding:9px 13px;cursor:pointer;white-space:nowrap;transition:background .2s,border-color .2s,transform .2s}button:hover{background:#d8c57214;border-color:#d8c57280;transform:translateY(-1px)}button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:4px}button.primary{border-color:#c4b36778;color:#efda94;background:#dbc0640d}
+    .control{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted)}input[type=range]{accent-color:var(--gold);width:82px;cursor:pointer}output{color:#d4dcd1;min-width:31px;font-size:10px;font-variant-numeric:tabular-nums}.actions{display:flex;gap:7px}.footer{display:flex;justify-content:center;gap:16px;color:#71888b;font-size:10px;letter-spacing:.08em;min-height:15px}.notice{color:var(--gold)}
+    @media(max-width:680px){.app{padding:22px 16px 18px;gap:22px}h1{font-size:24px}.signature{font-size:16px}.signature small{font-size:9px}.painting{width:100%}.toolbar{gap:12px 18px}.control input{width:85px}.footer{flex-wrap:wrap;gap:6px 12px}.hint{font-size:9px;left:12px;bottom:10px}main{min-height:240px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header><div><h1>星月夜</h1><p class="subtitle">流动的笔触，旋转的夜空</p></div><div class="signature">The Starry Night<small>向文森特·梵高致意 · 1889</small></div></header>
+    <main><div class="painting" id="painting"><canvas id="sky" role="img" aria-label="梵高星月夜风格的流动星空，明亮的蓝青色笔触围绕金黄色星体旋转，下方是起伏的光带。"></canvas><span class="hint">空格 暂停 / 继续 &nbsp; · &nbsp; F 全屏 &nbsp; · &nbsp; S 保存</span></div></main>
+    <div class="toolbar" aria-label="动画控制">
+      <button id="pause" class="primary" aria-pressed="false">暂停流动</button>
+      <label class="control" for="speed">流动速度 <input id="speed" type="range" min="0.25" max="2" step="0.05" value="1"><output id="speed-value" for="speed">1.00×</output></label>
+      <label class="control" for="density">笔触密度 <input id="density" type="range" min="8000" max="36000" step="1000" value="22000"><output id="density-value" for="density">22000</output></label>
+      <label class="control" for="bloom">辉光 <input id="bloom" type="range" min="0" max="1.8" step="0.05" value="0.30"><output id="bloom-value" for="bloom">0.30</output></label>
+      <label class="control" for="exposure">曝光 <input id="exposure" type="range" min="0.6" max="2" step="0.05" value="1.0"><output id="exposure-value" for="exposure">1.00</output></label>
+      <div class="actions"><button id="reset">重新绘制</button><button id="save">保存图片</button><button id="fullscreen">全屏欣赏</button></div>
+    </div>
+    <footer class="footer"><span>以粒子为颜料，以风为画笔</span><span id="status" role="status" aria-live="polite">正在铺开夜色…</span></footer>
+  </div>
+  <script>
+  'use strict';
+  // No network requests, external images or libraries: works directly from file://.
+  let canvas=document.querySelector('#sky');
+  let gpu=null,ctx=null,bloom=.3,exposure=1.0;
+  // Floating point bloom buffers retain highlight energy before the ACES pass.
+  class FilmRenderer {
+    constructor(canvas){
+      const gl=canvas.getContext('webgl2',{alpha:false,antialias:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});
+      if(!gl)throw new Error('WebGL2 unavailable');this.gl=gl;
+      this.hdr=!!gl.getExtension('EXT_color_buffer_float');this.index=0;
+      const vertex=`#version 300 es
+      in vec2 position;out vec2 uv;
+      void main(){uv=position*.5+.5;gl_Position=vec4(position,0.,1.);}`;
+      const common=`#version 300 es
+      precision highp float;in vec2 uv;out vec4 color;uniform sampler2D image;uniform vec2 texel;`;
+      const accumulate=common+`uniform sampler2D history;uniform sampler2D backdrop;uniform float decay;
+      void main(){vec4 stroke=texture(image,vec2(uv.x,1.-uv.y));
+      vec3 base=pow(texture(backdrop,vec2(uv.x,1.-uv.y)).rgb,vec3(2.2));
+      vec3 old=texture(history,uv).rgb;
+      vec3 fresh=pow(stroke.rgb,vec3(2.2))*stroke.a*.46;
+      color=vec4(mix(old,base,decay)+fresh,1.);}`;
+      const extract=common+`
+      void main(){vec3 c=texture(image,uv).rgb*2.2;float l=max(c.r,max(c.g,c.b));
+      color=vec4(c*smoothstep(.12,.65,l),1.);}`;
+      const blur=common+`uniform vec2 direction;
+      void main(){vec2 d=texel*direction;vec3 c=texture(image,uv).rgb*.227027;
+      c+=(texture(image,uv+d*1.384615).rgb+texture(image,uv-d*1.384615).rgb)*.316216;
+      c+=(texture(image,uv+d*3.230769).rgb+texture(image,uv-d*3.230769).rgb)*.070270;
+      color=vec4(c,1.);}`;
+      const composite=common+`uniform sampler2D glow;uniform float bloom;uniform float exposure;
+      vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
+      void main(){vec3 base=texture(image,uv).rgb*2.2;
+      vec3 b=texture(glow,uv).rgb;vec3 c=aces((base+b*bloom*.7)*exposure);
+      float vignette=1.-.20*pow(length((uv-.5)*vec2(1.1,1.)),1.5);
+      c=pow(c*vignette,vec3(1./2.2));
+      float grain=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-.5;
+      color=vec4(clamp(c+grain*.003,0.,1.),1.);}`;
+      this.accumulate=this.program(vertex,accumulate);this.extract=this.program(vertex,extract);this.blur=this.program(vertex,blur);this.composite=this.program(vertex,composite);
+      this.buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+      this.source=this.texture();this.backdrop=this.texture();this.targets=[];this.history=[];
+    }
+    program(vs,fs){const g=this.gl,p=g.createProgram();for(const [type,source]of [[g.VERTEX_SHADER,vs],[g.FRAGMENT_SHADER,fs]]){const s=g.createShader(type);g.shaderSource(s,source);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw new Error(g.getShaderInfoLog(s));g.attachShader(p,s);g.deleteShader(s)}g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS))throw new Error(g.getProgramInfoLog(p));return p}
+    texture(){const g=this.gl,t=g.createTexture();g.bindTexture(g.TEXTURE_2D,t);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);return t}
+    target(w,h){const g=this.gl,texture=this.texture();g.texImage2D(g.TEXTURE_2D,0,this.hdr?g.RGBA16F:g.RGBA,w,h,0,g.RGBA,this.hdr?g.HALF_FLOAT:g.UNSIGNED_BYTE,null);const framebuffer=g.createFramebuffer();g.bindFramebuffer(g.FRAMEBUFFER,framebuffer);g.framebufferTexture2D(g.FRAMEBUFFER,g.COLOR_ATTACHMENT0,g.TEXTURE_2D,texture,0);if(g.checkFramebufferStatus(g.FRAMEBUFFER)!==g.FRAMEBUFFER_COMPLETE)throw new Error('Incomplete framebuffer');g.clearColor(0,0,0,1);g.clear(g.COLOR_BUFFER_BIT);return {texture,framebuffer}}
+    resize(w,h){const g=this.gl;for(const t of [...this.targets,...this.history]){g.deleteTexture(t.texture);g.deleteFramebuffer(t.framebuffer)}this.w=w;this.h=h;this.bw=Math.max(1,w>>2);this.bh=Math.max(1,h>>2);this.targets=[this.target(this.bw,this.bh),this.target(this.bw,this.bh)];this.history=[this.target(w,h),this.target(w,h)];this.index=0;g.bindFramebuffer(g.FRAMEBUFFER,null)}
+    use(program,target,w,h){const g=this.gl;g.bindFramebuffer(g.FRAMEBUFFER,target);g.viewport(0,0,w,h);g.useProgram(program);g.bindBuffer(g.ARRAY_BUFFER,this.buffer);const a=g.getAttribLocation(program,'position');g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);g.uniform1i(g.getUniformLocation(program,'image'),0)}
+    bind(texture,unit=0){const g=this.gl;g.activeTexture(g.TEXTURE0+unit);g.bindTexture(g.TEXTURE_2D,texture)}
+    setBase(base){const g=this.gl;this.bind(this.backdrop);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,base)}
+    advance(strokes,dt){const g=this.gl,next=1-this.index;this.bind(this.source);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,strokes);
+      this.use(this.accumulate,this.history[next].framebuffer,this.w,this.h);this.bind(this.history[this.index].texture,1);g.uniform1i(g.getUniformLocation(this.accumulate,'history'),1);this.bind(this.backdrop,2);g.uniform1i(g.getUniformLocation(this.accumulate,'backdrop'),2);g.uniform1f(g.getUniformLocation(this.accumulate,'decay'),Math.min(.3,.026*dt));g.drawArrays(g.TRIANGLE_STRIP,0,4);this.index=next;g.activeTexture(g.TEXTURE0)}
+    render(){const g=this.gl;
+      this.use(this.extract,this.targets[0].framebuffer,this.bw,this.bh);this.bind(this.history[this.index].texture);g.drawArrays(g.TRIANGLE_STRIP,0,4);
+      for(let i=0;i<6;i++){const target=(i+1)%2;this.use(this.blur,this.targets[target].framebuffer,this.bw,this.bh);this.bind(this.targets[i%2].texture);g.uniform2f(g.getUniformLocation(this.blur,'texel'),1/this.bw,1/this.bh);g.uniform2f(g.getUniformLocation(this.blur,'direction'),i%2===0?1.2:0,i%2===1?1.2:0);g.drawArrays(g.TRIANGLE_STRIP,0,4)}
+      this.use(this.composite,null,this.w,this.h);this.bind(this.history[this.index].texture);this.bind(this.targets[0].texture,1);g.uniform1i(g.getUniformLocation(this.composite,'glow'),1);g.uniform1f(g.getUniformLocation(this.composite,'bloom'),bloom);g.uniform1f(g.getUniformLocation(this.composite,'exposure'),exposure);g.drawArrays(g.TRIANGLE_STRIP,0,4);g.activeTexture(g.TEXTURE0);
+    }
+  }
+  try{gpu=new FilmRenderer(canvas)}catch(error){console.warn('Using Canvas fallback:',error.message);const replacement=canvas.cloneNode();canvas.replaceWith(replacement);canvas=replacement;ctx=canvas.getContext('2d',{alpha:false});document.querySelector('#bloom').disabled=true;document.querySelector('#exposure').disabled=true}
+  const under=document.createElement('canvas'),base=under.getContext('2d',{alpha:false});
+  const ink=document.createElement('canvas'),paint=ink.getContext('2d',{alpha:!!gpu});
+  const W=1.6,H=1, TAU=Math.PI*2;
+  const vortices=[
+    {x:.83,y:.285,r:.16,s:-.36,warm:false},
+    {x:.485,y:.565,r:.086,s:-.24,warm:true},
+    {x:1.14,y:.555,r:.083,s:.21,warm:false},
+    {x:1.445,y:.565,r:.058,s:-.15,warm:false},
+    {x:1.48,y:.155,r:.10,s:-.24,warm:true},
+    {x:.17,y:.155,r:.055,s:.14,warm:true},
+    {x:.425,y:.305,r:.072,s:.17,warm:false},
+    {x:.62,y:.115,r:.032,s:-.095,warm:true},
+    {x:1.24,y:.095,r:.055,s:.12,warm:true},
+    {x:.13,y:.455,r:.072,s:-.13,warm:false},
+    {x:1.36,y:.375,r:.046,s:.1,warm:true}
+  ];
+  const cold=['#15334b','#24566f','#3b849f','#63adbe','#95cbd0','#c2ddd4','#e4e9cb'];
+  const gold=['#4c4d27','#868036','#b6a840','#d5bf50','#edd36b','#ffe59a','#fff0b3'];
+  let seed=1889,particles=[],running=!matchMedia('(prefers-reduced-motion: reduce)').matches,speed=1,density=22000,scale=800,last=0,acc=0,ticks=0,resizeTimer,warming=false;
+  let preferences={};try{preferences=JSON.parse(localStorage.getItem('starry-night-preferences')||'{}')||{}}catch{}
+  const query=new URLSearchParams(location.search);
+  function choice(name,min,max,fallback){const raw=preferences[name]??query.get(name);if(raw===null||raw===undefined)return fallback;const value=Number(raw);return Number.isFinite(value)?Math.min(max,Math.max(min,value)):fallback}
+  speed=choice('speed',.25,2,1);density=Math.round(choice('density',8000,36000,22000)/1000)*1000;bloom=choice('bloom',0,1.8,.3);exposure=choice('exposure',.6,2,1);
+  function remember(){try{localStorage.setItem('starry-night-preferences',JSON.stringify({speed,density,bloom,exposure}))}catch{}}
+  for(const [name,value]of Object.entries({speed,density,bloom,exposure})){document.querySelector('#'+name).value=value;document.querySelector('#'+name+'-value').textContent=name==='speed'?value.toFixed(2)+'×':name==='density'?value:value.toFixed(2)}
+  remember();
+  function random(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+  function field(x,y){
+    let vx=.11+.025*Math.sin(y*15+x*3),vy=.027*Math.sin(x*9+y*5),maxg=0,rx=0,ry=0;
+    for(const v of vortices){const dx=x-v.x+.012*Math.sin(y*14+x*3),dy=(y-v.y)/.85,r2=dx*dx+dy*dy,g=Math.exp(-r2/(2*v.r*v.r));maxg=Math.max(maxg,g);const a=v.s*g/Math.sqrt(r2+.0015);const sink=(v.warm?.13:.24)*g;rx-=dy*a+dx*sink;ry+=dx*a*.85-dy*sink*.85}
+    const wave=.70+.047*Math.sin(6*x-.7)+.012*Math.sin(15*x),band=Math.exp(-(((y-wave)/.065)**2));
+    vx=vx*(1-.80*maxg)+rx+.14*band;
+    vy=vy*(1-.80*maxg)+ry+.14*band*(.282*Math.cos(6*x-.7)+.18*Math.cos(15*x));
+    const lower=.835+.035*Math.sin(5*x+1.2)+.012*Math.sin(12*x-.8),deep=.95+.025*Math.sin(6*x-1.2);
+    const flowA=Math.exp(-(((y-lower)/.045)**2)),flowB=Math.exp(-(((y-deep)/.055)**2));
+    vx+=.10*flowA+.085*flowB;
+    vy+=.10*flowA*(.175*Math.cos(5*x+1.2)+.144*Math.cos(12*x-.8))+.085*flowB*.15*Math.cos(6*x-1.2);
+    return [vx,vy];
+  }
+  function emphasis(x,y){
+    let strength=.055;
+    for(const v of vortices){const r=Math.hypot(x-v.x,(y-v.y)/.85)/v.r;
+      const angle=Math.atan2((y-v.y)/.85,x-v.x);
+      const brush=.78+.22*Math.sin(angle*2+Math.log(r+.15)*2.4+v.x*4);
+      const ring=Math.exp(-(((r-1.05)/.68)**2));strength=Math.max(strength,ring*brush*(v.warm?.95:.9));}
+    const wave=.70+.047*Math.sin(6*x-.7)+.012*Math.sin(15*x);
+    strength=Math.max(strength,.85*Math.exp(-(((y-wave)/.036)**2)));
+    const sky=.40+.15*Math.sin(x*4-.6);
+    strength=Math.max(strength,.48*Math.exp(-(((y-sky)/.06)**2)));
+    const upper=.21+.065*Math.sin(x*7-.6),left=Math.exp(-(((x-.43)/.38)**4));
+    strength=Math.max(strength,.44*left*Math.exp(-(((y-upper)/.048)**2)));
+    const right=Math.exp(-(((x-1.41)/.30)**4)),sweep=.51+.045*Math.sin(x*10);
+    strength=Math.max(strength,.43*right*Math.exp(-(((y-sweep)/.065)**2)));
+    strength=Math.max(strength,.24*Math.exp(-(((x-.48)/.58)**4)-(((y-.18)/.24)**4)));
+    const lower=.835+.035*Math.sin(5*x+1.2)+.012*Math.sin(12*x-.8),deep=.95+.025*Math.sin(6*x-1.2);
+    strength=Math.max(strength,.56*Math.exp(-(((y-lower)/.035)**2)),.38*Math.exp(-(((y-deep)/.042)**2)));
+    return Math.min(1,strength);
+  }
+  function colorAt(x,y,tone){
+    let warmth=0;
+    for(const v of vortices){if(v.warm){const dx=x-v.x,dy=y-v.y;warmth=Math.max(warmth,Math.exp(-(dx*dx+dy*dy)/(1.55*v.r*v.r)))}}
+    const wave=.70+.047*Math.sin(6*x-.7)+.012*Math.sin(15*x);
+    if(Math.abs(y-wave)<.027)warmth=Math.max(warmth,.77);
+    const lower=.835+.035*Math.sin(5*x+1.2)+.012*Math.sin(12*x-.8);
+    if(y>.79&&Math.abs(y-lower)<.006&&Math.sin(x*9+.8)>.25)return gold[Math.min(4,tone)];
+    return (warmth>.32?gold:cold)[tone];
+  }
+  function particle(initial=false){
+    let x=random()*1.7-.05,y=random()*1.08-.04;
+    const area=random();if(area<.28){x=.08+random()*1.02;y=.015+random()*.37;}else if(area<.50){x=random()*W;y=.79+random()*.22;}
+    return {x,y,age:initial?Math.floor(random()*180):0,life:130+Math.floor(random()*220),tone:Math.min(6,Math.floor(random()**1.35*7)),width:.3+random()**2*1.0,phase:random()*TAU};
+  }
+  function background(){
+    const w=under.width,h=under.height;
+    const grad=base.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#080f18');grad.addColorStop(.62,'#0c151e');grad.addColorStop(1,'#070f17');base.fillStyle=grad;base.fillRect(0,0,w,h);
+    // Fine directional underpainting keeps the canvas rich between moving strokes.
+    base.lineCap='round';
+    for(let i=0;i<32000;i++){
+      let x=random()*W,y=random();
+      if(i%4===1){x=.08+random()*1.02;y=.015+random()*.37;}
+      if(i%4===2){x=random()*W;y=.79+random()*.22;}
+      if(i%3===0){const v=vortices[Math.floor(random()*vortices.length)],a=random()*TAU,r=v.r*(.4+random()*1.5);x=v.x+Math.cos(a)*r;y=v.y+Math.sin(a)*r*.85;}
+      const tone=Math.min(6,Math.floor(random()*7)),power=emphasis(x,y);
+      base.strokeStyle=colorAt(x,y,tone);base.globalAlpha=(.10+random()*.48)*power;base.lineWidth=(.4+random()**2*2.0)*scale/800;base.beginPath();base.moveTo(x*scale,y*scale);
+      const steps=5+Math.floor(random()*35);
+      for(let j=0;j<steps;j++){const d=field(x,y);x+=d[0]*.011;y+=d[1]*.011;base.lineTo(x*scale,y*scale)}base.stroke();
+    }
+    base.globalAlpha=1;
+    // Small luminous cores, with soft concentric halos underneath the brushwork.
+    for(const v of vortices.filter(v=>v.warm)){
+      const glow=base.createRadialGradient(v.x*scale,v.y*scale,0,v.x*scale,v.y*scale,v.r*scale);
+      glow.addColorStop(0,'#e2d18a80');glow.addColorStop(.12,'#b5a14c34');glow.addColorStop(1,'#b5a14c00');base.fillStyle=glow;base.fillRect((v.x-v.r)*scale,(v.y-v.r)*scale,v.r*2*scale,v.r*2*scale);
+    }
+    paint.drawImage(under,0,0);
+  }
+  function present(){if(gpu)gpu.render();else ctx.drawImage(ink,0,0)}
+  function step(dt=1,show=true){
+    if(gpu){paint.clearRect(0,0,ink.width,ink.height)}else{paint.globalAlpha=Math.min(.9,.026*dt);paint.drawImage(under,0,0)}paint.globalAlpha=1;paint.lineCap='round';
+    for(let i=0;i<particles.length;i++){
+      let p=particles[i];p.age+=dt;if(p.age>p.life||p.x<-.12||p.x>1.72||p.y<-.12||p.y>1.12){p=particles[i]=particle()}
+      const d=field(p.x,p.y),nx=p.x+d[0]*.018*dt,ny=p.y+d[1]*.018*dt;
+      paint.strokeStyle=colorAt(p.x,p.y,p.tone);paint.globalAlpha=(.3+.4*Math.sin(p.phase+p.age*.025)**2)*emphasis(p.x,p.y);paint.lineWidth=p.width*scale/800;
+      paint.beginPath();paint.moveTo(p.x*scale,p.y*scale);paint.lineTo(nx*scale,ny*scale);paint.stroke();p.x=nx;p.y=ny;
+    }
+    paint.globalAlpha=1;if(gpu)gpu.advance(ink,dt);ticks++;if(show)present();
+  }
+  function setup(){
+    const rect=canvas.getBoundingClientRect();scale=Math.min(1600,Math.max(600,rect.width*Math.min(devicePixelRatio||1,2)/W));
+    for(const c of [canvas,under,ink]){c.width=Math.round(scale*W);c.height=Math.round(scale)}
+    if(gpu)gpu.resize(canvas.width,canvas.height);
+    seed=1889;background();if(gpu)gpu.setBase(under);particles=Array.from({length:density},()=>particle(true));
+    // Render in batches, so initialization never locks the controls for seconds.
+    let remaining=75;warming=true;const epoch=++setup.epoch;
+    function warm(){if(epoch!==setup.epoch)return;for(let i=0;i<4&&remaining>0;i++,remaining--)step(1,false);present();if(remaining>0)requestAnimationFrame(warm);else{warming=false;document.querySelector('#status').textContent=running?'夜色正在流动':'已暂停 · 点击继续欣赏';last=0}}
+    warm();
+  }
+  setup.epoch=0;
+  function animate(now){requestAnimationFrame(animate);if(document.hidden||!running||warming){last=now;return}if(!last)last=now;acc+=Math.min(80,now-last);last=now;if(acc>=1000/30){const dt=Math.min(2,acc/(1000/30))*speed;acc=0;step(dt)}}
+  function toggle(){running=!running;const b=document.querySelector('#pause');b.textContent=running?'暂停流动':'继续流动';b.setAttribute('aria-pressed',String(!running));document.querySelector('#status').textContent=running?'夜色正在流动':'已暂停 · 点击继续欣赏'}
+  function save(){const a=document.createElement('a');a.download='星月夜-'+new Date().toISOString().replace(/[:.]/g,'-')+'.png';a.href=canvas.toDataURL('image/png');a.click();document.querySelector('#status').textContent='已保存当前画面'}
+  async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('#painting').requestFullscreen()}catch{document.querySelector('#status').textContent='此环境不支持全屏，可在浏览器中打开'}}
+  document.querySelector('#pause').onclick=toggle;
+  document.querySelector('#save').onclick=save;
+  document.querySelector('#fullscreen').onclick=fullscreen;
+  document.querySelector('#reset').onclick=setup;
+  document.querySelector('#speed').oninput=e=>{speed=+e.target.value;document.querySelector('#speed-value').textContent=speed.toFixed(2)+'×';remember()};
+  document.querySelector('#density').oninput=e=>{density=+e.target.value;document.querySelector('#density-value').textContent=density;while(particles.length<density)particles.push(particle(true));particles.length=density;remember()};
+  document.querySelector('#bloom').oninput=e=>{bloom=+e.target.value;document.querySelector('#bloom-value').textContent=bloom.toFixed(2);present();remember()};
+  document.querySelector('#exposure').oninput=e=>{exposure=+e.target.value;document.querySelector('#exposure-value').textContent=exposure.toFixed(2);present();remember()};
+  document.addEventListener('keydown',e=>{if(/INPUT|BUTTON/.test(e.target.tagName)||e.ctrlKey||e.altKey||e.metaKey)return;if(e.code==='Space'){e.preventDefault();toggle()}if(e.key.toLowerCase()==='f')fullscreen();if(e.key.toLowerCase()==='s')save()});
+  new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(setup,200)}).observe(document.querySelector('#painting'));
+  if(!running){document.querySelector('#pause').textContent='继续流动';document.querySelector('#pause').setAttribute('aria-pressed','true')}
+  setup();requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
